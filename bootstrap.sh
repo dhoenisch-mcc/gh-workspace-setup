@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-
-sudo apt update && sudo apt upgrade -y
+sudo DEBIAN_FRONTEND=noninteractive apt -y update
+sudo DEBIAN_FRONTEND=noninteractive apt -y upgrade
 
 sudo apt install stow
 
