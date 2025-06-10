@@ -16,7 +16,6 @@ sudo apt install stow
 	black \
 	btop \
 	chafa \
-	chezmoi \
 	cmatrix \
 	cobra-cli \
 	container-structure-test \
@@ -24,32 +23,24 @@ sudo apt install stow
 	cosign \
 	direnv \
 	dive \
-	doctl \
 	eget \
 	eza \
 	fd \
 	feh \
-	ffmpeg \
-	flyctl \
 	fx \
 	fzf \
-	gcc \
-	gh \
 	glow \
 	go \
-	go-jsonschema \
+	go-jsonnet \
 	go-task \
 	gomodifytags \
 	helm \
-	id3v2 \
 	jq \
 	k9s \
-	kdash \
 	kubernetes-cli \
 	kubeseal \
 	kustomize \
 	lazygit \
-	libnotify \
 	lua-language-server \
 	luarocks \
 	mako \
@@ -57,7 +48,6 @@ sudo apt install stow
 	node \
 	openapi-generator \
 	pandoc \
-	portal \
 	prettierd \
 	pyright \
 	python@3.13 \
@@ -67,13 +57,10 @@ sudo apt install stow
 	silicon \
 	starship \
 	stylua \
-	talosctl \
-	tmux \
 	tree-sitter \
 	typescript-language-server \
 	unzip \
 	yamlfix \
 	yazi \
-	yt-dlp \
 	zellij \
 	zoxide
