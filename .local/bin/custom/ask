@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+
+# Capture all arguments as a single string
+query="$@"
+
+
+# Pass the string to a function
+search() {
+	opencode -p "$1" | glow
+}
+
+search "$query"

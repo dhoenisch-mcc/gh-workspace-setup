@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+
+# Fetch HTML from whatthecommit.com
+response=$(curl -s https://whatthecommit.com/)
+
+# Extract the commit message from the content div's first paragraph
+commit_message=$(echo "$response" | grep -A 1 '<div id="content">' | grep '<p>' | sed -n 's/.*<p>\(.*\)<\/p>.*/\1/p' | head -n 1)
+
+# Print the raw commit message
+echo "$commit_message"

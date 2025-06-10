@@ -1,0 +1,179 @@
+#!/bin/bash
+
+# semver.sh - A bash script for handling Semantic Versioning operations
+
+set -euo pipefail
+
+# ANSI color codes for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+NC='\033[0m' # No Color
+
+# Print usage information
+usage() {
+    echo "Usage: $0 <command> [options]"
+    echo "Commands:"
+    echo "  bump <major|minor|patch> [-v <version>]  Bump version (default: read from VERSION file)"
+    echo "  validate <version>                       Validate a SemVer string"
+    echo "  compare <version1> <version2>           Compare two versions (-1: v1<v2, 0: v1=v2, 1: v1>v2)"
+    echo "Options:"
+    echo "  -v <version>                            Specify version explicitly"
+    echo "  -h, --help                              Show this help message"
+    exit 1
+}
+
+# Log messages with color
+log_info() { echo -e "${GREEN}[INFO]${NC} $1"; }
+log_warn() { echo -e "${YELLOW}[WARN]${NC} $1"; }
+log_error() { echo -e "${RED}[ERROR]${NC} $1" >&2; exit 1; }
+
+# Validate SemVer format
+validate_semver() {
+    local version=$1
+    if [[ ! $version =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z-]+(\.[0-9A-Za-z-]+)*)?(\+[0-9A-Za-z-]+(\.[0-9A-Za-z-]+)*)?$ ]]; then
+        log_error "Invalid SemVer format: $version"
+    fi
+}
+
+# Parse version into components
+parse_version() {
+    local version=$1
+    validate_semver "$version"
+    IFS='.' read -r major minor patch <<< "${version%%[-+]*}"
+    echo "$major $minor $patch"
+}
+
+# Bump version based on type
+bump_version() {
+    local version=$1 type=$2
+    read -r major minor patch <<< "$(parse_version "$version")"
+
+    case $type in
+        major)
+            ((major++))
+            minor=0
+            patch=0
+            ;;
+        minor)
+            ((minor++))
+            patch=0
+            ;;
+        patch)
+            ((patch++))
+            ;;
+        *)
+            log_error "Invalid bump type: $type. Use major, minor, or patch"
+    esac
+
+    echo "$major.$minor.$patch"
+}
+
+# Compare two versions
+compare_versions() {
+    local v1=$1 v2=$2
+    read -r major1 minor1 patch1 <<< "$(parse_version "$v1")"
+    read -r major2 minor2 patch2 <<< "$(parse_version "$v2")"
+
+    if [ "$major1" -lt "$major2" ]; then
+        echo "-1"
+    elif [ "$major1" -gt "$major2" ]; then
+        echo "1"
+    elif [ "$minor1" -lt "$minor2" ]; then
+        echo "-1"
+    elif [ "$minor1" -gt "$minor2" ]; then
+        echo "1"
+    elif [ "$patch1" -lt "$patch2" ]; then
+        echo "-1"
+    elif [ "$patch1" -gt "$patch2" ]; then
+        echo "1"
+    else
+        echo "0"
+    fi
+}
+
+# Create a git release
+create_release() {
+    local new_version=$1
+    if ! git rev-parse --git-dir > /dev/null 2>&1; then
+        log_error "Not a git repository"
+    fi
+
+    log_info "Creating release for version $new_version"
+    echo "$new_version" > VERSION
+    git add VERSION
+    git commit -m "Release version $new_version"
+    git tag "v$new_version"
+    log_info "Version $new_version committed and tagged"
+}
+
+# Main function
+main() {
+    local command version type new_version
+    command=${1:-}
+    shift || true
+
+    # Handle help
+    if [[ "$command" == "-h" || "$command" == "--help" || -z "$command" ]]; then
+        usage
+    fi
+
+    case $command in
+        bump)
+            type=${1:-}
+            version=""
+            while [[ $# -gt 0 ]]; do
+                case $1 in
+                    -v)
+                        shift
+                        version=${1:-}
+                        shift
+                        ;;
+                    *)
+                        shift
+                        ;;
+                esac
+            done
+
+            if [[ -z "$type" ]]; then
+                log_error "Bump type required (major, minor, patch)"
+            fi
+
+            if [[ -z "$version" ]]; then
+                if [[ ! -f VERSION ]]; then
+                    log_error "VERSION file not found and no version specified"
+                fi
+                version=$(cat VERSION)
+                validate_semver "$version"
+            fi
+
+            new_version=$(bump_version "$version" "$type")
+            log_info "Bumping $version to $new_version"
+            create_release "$new_version"
+            ;;
+
+        validate)
+            version=${1:-}
+            if [[ -z "$version" ]]; then
+                log_error "Version string required for validation"
+            fi
+            validate_semver "$version"
+            log_info "Version $version is valid SemVer"
+            ;;
+
+        compare)
+            local v1=${1:-} v2=${2:-}
+            if [[ -z "$v1" || -z "$v2" ]]; then
+                log_error "Two version strings required for comparison"
+            fi
+            result=$(compare_versions "$v1" "$v2")
+            log_info "Comparison result: $result"
+            echo "$result"
+            ;;
+
+        *)
+            log_error "Unknown command: $command"
+    esac
+}
+
+main "$@"

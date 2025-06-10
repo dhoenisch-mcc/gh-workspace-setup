@@ -1,0 +1,41 @@
+#!/bin/bash
+
+# Check if a command was provided
+if [ $# -eq 0 ]; then
+    echo "Error: Please provide a command to capture"
+    echo "Usage: $0 \"command with arguments\""
+    exit 1
+fi
+
+# Ensure termshot and wl-copy are installed
+if ! command -v termshot &> /dev/null || ! command -v wl-copy &> /dev/null; then
+    echo "Error: termshot and wl-copy are required. Please install them."
+    exit 1
+fi
+
+# Create Screenshots directory if it doesn't exist
+mkdir -p ~/Pictures/Screenshots
+
+# Generate timestamp for filename
+timestamp=$(date "+%Y%m%d-%H%M%S")
+output_file=~/Pictures/Screenshots/termshot-$timestamp.png
+
+# Run termshot with the provided command and save to file
+termshot --show-cmd --filename "$output_file" -- "$@"
+
+# Check if termshot succeeded
+if [ $? -ne 0 ]; then
+    echo "Error: termshot failed to capture the command output"
+    exit 1
+fi
+
+# Copy the screenshot to clipboard using wl-copy
+cat "$output_file" | wl-copy -t image/png
+
+# Verify clipboard copy
+if [ $? -eq 0 ]; then
+    echo "Screenshot saved to $output_file and copied to clipboard"
+else
+    echo "Screenshot saved to $output_file but failed to copy to clipboard"
+    exit 1
+fi

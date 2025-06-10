@@ -1,0 +1,13 @@
+#!/bin/bash
+
+EZA=$(which eza)
+
+file=$($EZA -liR ~/.local/bin/custom | awk '{print $8}' | xargs -I{} realpath $HOME/.local/bin/custom/{} | fzf --preview='bat --theme=1337 {}')
+
+
+if [[ $file == "" ]]
+then
+	exit 1
+else
+	$file
+fi

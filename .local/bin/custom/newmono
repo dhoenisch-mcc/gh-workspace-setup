@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+
+
+mkdir apps/ packages/ tools/ configs/ docs/ infra/

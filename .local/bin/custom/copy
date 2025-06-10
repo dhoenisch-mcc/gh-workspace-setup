@@ -1,0 +1,7 @@
+#!/bin/bash
+
+# Get the last command from history
+last_command=$(atuin history last --cmd-only)
+
+# Copy to clipboard using wl-copy
+echo "$last_command" | wl-copy

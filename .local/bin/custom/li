@@ -1,0 +1,63 @@
+#!/bin/bash
+
+# Check if argument is provided
+if [ $# -eq 0 ]; then
+    echo "Usage: $0 <length>"
+    echo "Example: $0 100"
+    exit 1
+fi
+
+# Check if argument is a positive integer
+if ! [[ "$1" =~ ^[0-9]+$ ]] || [ "$1" -eq 0 ]; then
+    echo "Error: Please provide a positive integer"
+    exit 1
+fi
+
+length=$1
+
+# Check if curl is available
+if ! command -v curl >/dev/null 2>&1; then
+    echo "Error: curl is required but not installed"
+    exit 1
+fi
+
+# Make API call to Lorem Picsum's text API
+# This API generates lorem ipsum based on character count
+echo "Generating lorem ipsum text..."
+result=$(curl -fsSL "http://hipsum.co/api/?type=hipster-centric&sentences=50" | jq -r ".[]" | head -c $length)
+
+# Check if API call was successful
+if [ -z "$result" ]; then
+    echo "Error: Failed to fetch lorem ipsum from API"
+    echo "Falling back to local lorem ipsum..."
+
+    # Fallback lorem ipsum
+    lorem_base="Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum. Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo. Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit, sed quia consequuntur magni dolores eos qui ratione voluptatem sequi nesciunt. Neque porro quisquam est, qui dolorem ipsum quia dolor sit amet, consectetur, adipisci velit, sed quia non numquam eius modi tempora incidunt ut labore et dolore magnam aliquam quaerat voluptatem."
+
+    generated_text=""
+    while [ ${#generated_text} -lt $length ]; do
+        generated_text="$generated_text $lorem_base"
+    done
+
+    result=${generated_text:0:$length}
+fi
+
+# Ensure we have exactly the requested length
+if [ ${#result} -gt $length ]; then
+    result=${result:0:$length}
+elif [ ${#result} -lt $length ]; then
+    # Pad with additional API calls if needed
+    while [ ${#result} -lt $length ]; do
+        additional=$(curl -s "https://loripsum.net/api/1/long/plaintext" 2>/dev/null)
+        if [ -n "$additional" ]; then
+            result="$result $additional"
+        else
+            break
+        fi
+    done
+    result=${result:0:$length}
+fi
+
+# Copy to clipboard (works on macOS, Linux with Wayland/X11, and WSL)
+echo -n "$result" | wl-copy
+echo "Lorem ipsum text ($length characters) copied to clipboard!"
